@@ -253,9 +253,21 @@ class GameEngine:
             "next": choice["next"]
         })
 
+        self.apply_effects(choice.get("effects", {}))
         self.visited_scenes.add(self.current_scene)
         self.current_scene = choice["next"]
         return True
+
+    def apply_effects(self, effects):
+        for param, val in effects.items():
+            if param == "health":
+                self.health = max(0, min(150, self.health + val))
+            elif param == "karma":
+                self.karma = max(-100, min(100, self.karma + val))
+            elif param == "experience":
+                self.experience = max(0, self.experience + val)
+            elif param == "luck":
+                self.luck = max(0, min(100, self.luck + val))
 
 def main():
     print("Добро пожаловать в игру!\n")
@@ -270,6 +282,10 @@ def main():
         scene = engine.get_current_scene()
         print(scene["text"])
         engine.display_status()
+
+        if engine.is_ending():
+            ending = engine.get_ending()
+            print(f"Вы достигли концовки: {ending} !\n")
 
 if __name__ == "__main__":
     main()
