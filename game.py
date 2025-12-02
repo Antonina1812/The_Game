@@ -1,3 +1,5 @@
+from collections import deque
+
 class GameEngine:
     def __init__(self):
         self.current_scene = "start"
@@ -221,19 +223,17 @@ class GameEngine:
                 "ending_name": "Мудрый странник"
             }
         })
-
         return story
     
     def get_current_scene(self):
-        return self.story.get(self.current_scene, None)
+        return self.story.get(self.current_scene, None) # возвращаем словарь
     
     def display_status(self):
         print(f"Здоровье: {self.health}\nКарма: {self.karma}\nОпыт: {self.experience}\nУдача: {self.luck}")
 
     def is_ending(self):
         scene = self.get_current_scene()
-        if not scene:
-            return scene.get("is_ending", False)
+        return scene.get("is_ending", False)
 
     def get_ending(self):
         scene = self.get_current_scene()
@@ -268,6 +268,36 @@ class GameEngine:
                 self.experience = max(0, self.experience + val)
             elif param == "luck":
                 self.luck = max(0, min(100, self.luck + val))
+
+    def calculate_score(self):
+        base_score = self.experience * 2 + self.health + self.karma + self.luck
+        if len(self.visited_scenes >= 5):
+            base_score += 50
+        if self.health >= 100:
+            base_score += 30
+        if self.karma >= 50:
+            base_score += 40
+
+    def find_paths_to_ending(self, target_ending): #BFS
+        graph = {}
+        for scene_id, scene_data in self.story.items():
+            graph[scene_id] = [choice["next"] for choice in scene_data.get("choices", [])]
+
+        paths = []
+        queue = deque([(["start"], "start")]) # список пройденных сцен и текущая сцена
+        while queue:
+            path, current = queue.popleft()
+            if (current in self.story and self.story[current].get("is_endeing", False) and self.story[current].get("ending_name") == target_ending):
+                paths.append(path + [current])
+
+            for neighbor in graph.get(current, []):
+                if neighbor not in path:
+                    queue.append(path + [neighbor], neighbor)
+
+        return paths
+    
+    def count_all_endings(self): #dfs
+        endings_counter = {}
 
 def main():
     print("Добро пожаловать в игру!\n")
