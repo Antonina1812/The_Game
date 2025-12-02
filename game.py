@@ -230,17 +230,46 @@ class GameEngine:
     def display_status(self):
         print(f"Здоровье: {self.health}\nКарма: {self.karma}\nОпыт: {self.experience}\nУдача: {self.luck}")
 
+    def is_ending(self):
+        scene = self.get_current_scene()
+        if not scene:
+            return scene.get("is_ending", False)
+
+    def get_ending(self):
+        scene = self.get_current_scene()
+        if (scene and scene.get("is_ending", False)):
+            return scene.get("ending_name", "Неизвестная концовка")
+        return None
+
+    def make_choice(self, choice_index):
+        scene = self.get_current_scene()
+        if ((not scene) or choice_index < 0 or choice_index >= len(scene["choices"])):
+            return False
+
+        choice = scene["choices"][choice_index]
+        self.choice_history.append({
+            "scene": self.current_scene,
+            "choice": choice["text"],
+            "next": choice["next"]
+        })
+
+        self.visited_scenes.add(self.current_scene)
+        self.current_scene = choice["next"]
+        return True
+
 def main():
-    print("Добро пожаловать в игру!")
+    print("Добро пожаловать в игру!\n")
 
     engine = GameEngine()
-    engine.player_name = input("Введите ваше имя: ").strip() or "Игрок"
+    engine.player_name = input("Введите ваше имя: \n").strip() or "Игрок"
 
-    print(f"\nДобро пожаловать, {engine.player_name}!")
+    print(f"\nДобро пожаловать, {engine.player_name}!\n")
     print("Ваше приключение начинается...\n")
 
     while 1:
         scene = engine.get_current_scene()
+        print(scene["text"])
+        engine.display_status()
 
 if __name__ == "__main__":
     main()
