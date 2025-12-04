@@ -1,5 +1,3 @@
-from collections import deque
-
 class GameEngine:
     def __init__(self):
         self.current_scene = "start"
@@ -147,6 +145,99 @@ class GameEngine:
                     {"text": "Магический свиток", "next": "scroll_found", "effects": {"experience": 40}},
                     {"text": "Карту сокровищ", "next": "treasure_map", "effects": {"luck": 50}}
                 ]
+            },
+            
+            "row_faster": {
+                "text": "Вы гребли изо всех сил и достигли противоположного берега! Лодка тонет,\n"
+                       "но вы успеваете выскочить на берег. Перед вами хижина.",
+                "choices": [
+                    {"text": "Войти в хижину", "next": "hut", "effects": {"experience": 20}},
+                    {"text": "Обойти хижину", "next": "around_hut", "effects": {"luck": 10}},
+                    {"text": "Отдохнуть на берегу", "next": "shore_rest", "effects": {"health": 20}}
+                ]
+            },
+            
+            "bail_water": {
+                "text": "Вы вычерпываете воду и успеваете добраться до берега.\n"
+                       "Вы мокрые, но живы. Перед вами тропинка, ведущая в лес.",
+                "choices": [
+                    {"text": "Идти по тропинке", "next": "forest_path", "effects": {"health": -10}},
+                    {"text": "Обследовать берег", "next": "shore_explore", "effects": {"experience": 15}},
+                    {"text": "Вернуться к реке", "next": "river", "effects": {"health": 5}}
+                ]
+            },
+            
+            "jump_water": {
+                "text": "Вы прыгнули в воду и поплыли к берегу. Течение сильное,\n"
+                       "но вы справляетесь и выбираетесь на сушу.",
+                "choices": [],
+                "is_ending": True,
+                "ending_name": "Отважный пловец"
+            },
+            
+            "river_item": {
+                "text": "Вы достаёте из воды старый меч в ножнах.\n"
+                       "Он выглядит древним, но хорошо сохранившимся.",
+                "choices": [
+                    {"text": "Взять меч", "next": "take_sword", "effects": {"experience": 30, "luck": 10}},
+                    {"text": "Оставить меч", "next": "ford", "effects": {"karma": 15}},
+                    {"text": "Осмотреть тщательнее", "next": "examine_sword", "effects": {"experience": 20}}
+                ]
+            },
+            
+            "look_around": {
+                "text": "Вы осматриваетесь и замечаете на берегу следы животных.\n"
+                       "Похоже, здесь часто приходят на водопой.",
+                "choices": [
+                    {"text": "Пойти по следам", "next": "animal_tracks", "effects": {"experience": 10}},
+                    {"text": "Вернуться к броду", "next": "ford", "effects": {}},
+                    {"text": "Продолжить путь", "next": "other_side", "effects": {"health": 10}}
+                ]
+            },
+            
+            "leave_crystal": {
+                "text": "Вы решаете не брать кристалл. Внезапно появляется дух древнего хранителя,\n"
+                       "который благодарит вас за мудрость.",
+                "choices": [
+                    {"text": "Поговорить с духом", "next": "talk_spirit", "effects": {"karma": 40, "experience": 30}},
+                    {"text": "Попросить награду", "next": "ask_reward", "effects": {"karma": -20, "luck": 30}},
+                    {"text": "Поклониться и уйти", "next": "ruins", "effects": {"karma": 10}}
+                ]
+            },
+            
+            "study_inscription": {
+                "text": "Вы изучаете надпись и понимаете, что это заклинание защиты.\n"
+                       "Теперь вы можете использовать его в битве.",
+                "choices": [
+                    {"text": "Запомнить заклинание", "next": "remember_spell", "effects": {"experience": 40}},
+                    {"text": "Записать в дневник", "next": "write_spell", "effects": {"experience": 35}},
+                    {"text": "Вернуться к алтарю", "next": "altar", "effects": {"experience": 10}}
+                ]
+            },
+            
+            "find_key": {
+                "text": "Вы находите ключ под камнем! Он подходит к сундуку.",
+                "choices": [
+                    {"text": "Открыть сундук", "next": "open_chest", "effects": {"luck": 20}},
+                    {"text": "Оставить сундук закрытым", "next": "search_ruins", "effects": {"karma": 25}},
+                    {"text": "Взять ключ с собой", "next": "take_key", "effects": {"luck": 15}}
+                ]
+            },
+            
+            "use_magic": {
+                "text": "Вы используете магию, и волк отступает! Он смотрит на вас с уважением.",
+                "choices": [
+                    {"text": "Добить волка", "next": "finish_wolf", "effects": {"experience": 50, "karma": -20}},
+                    {"text": "Отпустить волка", "next": "release_wolf", "effects": {"karma": 50}},
+                    {"text": "Попытаться подружиться", "next": "befriend_wolf", "effects": {"luck": 30, "karma": 40}}
+                ]
+            },
+            
+            "statue_fight": {
+                "text": "Вы сражаетесь с ожившими статуями. Это очень тяжелая битва!",
+                "choices": [],
+                "is_ending": True,
+                "ending_name": "Герой Руин"
             }
         }
 
@@ -221,19 +312,51 @@ class GameEngine:
                 "choices": [],
                 "is_ending": True,
                 "ending_name": "Мудрый странник"
+            },
+            
+            "avoid_wolf": {
+                "text": "Вы попытались обойти волка, но он вас заметил и напал сзади.\n"
+                       "К счастью, охотники услышали шум и спасли вас.",
+                "choices": [],
+                "is_ending": True,
+                "ending_name": "Спасённый охотниками"
+            },
+            
+            "scroll_found": {
+                "text": "Вы нашли древний магический свиток! Он содержит могущественные заклинания.\n"
+                       "Теперь вы можете стать великим магом.",
+                "choices": [],
+                "is_ending": True,
+                "ending_name": "Великий Маг"
+            },
+            
+            "treasure_map": {
+                "text": "Вы нашли карту сокровищ! Она указывает на скрытые богатства.\n"
+                       "Ваши поиски только начинаются...",
+                "choices": [],
+                "is_ending": True,
+                "ending_name": "Искатель Сокровищ"
+            },
+            
+            "take_amulet": {
+                "text": "Вы взяли амулет с собой. Его магия защищает вас в путешествиях.\n"
+                       "Вы становитесь известным искателем приключений.",
+                "choices": [],
+                "is_ending": True,
+                "ending_name": "Странствующий Искатель"
             }
         })
         return story
     
     def get_current_scene(self):
-        return self.story.get(self.current_scene, None) # возвращаем словарь
+        return self.story.get(self.current_scene, None)
     
     def display_status(self):
         print(f"Здоровье: {self.health}\nКарма: {self.karma}\nОпыт: {self.experience}\nУдача: {self.luck}")
 
     def is_ending(self):
         scene = self.get_current_scene()
-        return scene.get("is_ending", False)
+        return scene.get("is_ending", False) if scene else False
 
     def get_ending(self):
         scene = self.get_current_scene()
@@ -271,51 +394,180 @@ class GameEngine:
 
     def calculate_score(self):
         base_score = self.experience * 2 + self.health + self.karma + self.luck
-        if len(self.visited_scenes >= 5):
+        if len(self.visited_scenes) >= 5:
             base_score += 50
         if self.health >= 100:
             base_score += 30
         if self.karma >= 50:
             base_score += 40
+        return base_score
 
-    def find_paths_to_ending(self, target_ending): #BFS
+    def build_graph(self):
         graph = {}
         for scene_id, scene_data in self.story.items():
-            graph[scene_id] = [choice["next"] for choice in scene_data.get("choices", [])]
+            choices = scene_data.get("choices", [])
+            graph[scene_id] = [choice["next"] for choice in choices]
+        return graph
 
+    def find_paths_to_ending(self, target_ending): #BFS
+        graph = self.build_graph()
         paths = []
-        queue = deque([(["start"], "start")]) # список пройденных сцен и текущая сцена
+        queue = [(["start"], "start")]
+
         while queue:
-            path, current = queue.popleft()
-            if (current in self.story and self.story[current].get("is_endeing", False) and self.story[current].get("ending_name") == target_ending):
+            path, current = queue.pop(0)
+            if (current in self.story and 
+                self.story[current].get("is_ending", False) and
+                self.story[current].get("ending_name") == target_ending):
                 paths.append(path + [current])
+                continue
 
             for neighbor in graph.get(current, []):
                 if neighbor not in path:
-                    queue.append(path + [neighbor], neighbor)
-
+                    queue.append((path + [neighbor], neighbor))
         return paths
+
+    def dfs(self, current, visited, endings_counter):
+        if current in visited:
+            return
+            
+        visited.add(current)
+
+        if (current in self.story and 
+            self.story[current].get("is_ending", False)):
+            ending_name = self.story[current].get("ending_name", "Неизвестно")
+            endings_counter[ending_name] = endings_counter.get(ending_name, 0) + 1
+            return
+        
+        scene = self.story.get(current, {})
+        for choice in scene.get("choices", []):
+            next_scene = choice["next"]
+            if next_scene not in visited:
+                self.dfs(next_scene, visited.copy(), endings_counter)
     
     def count_all_endings(self): #dfs
         endings_counter = {}
+        self.dfs("start", set(), endings_counter)
+        return endings_counter
+    
+    def save_results(self):
+        filename = "game_results.txt"
+        ending = self.get_ending()
+        final_score = self.calculate_score()
+        
+        try:
+            with open(filename, "a", encoding="utf-8") as f:
+                f.write(f"\n")
+                f.write(f"Игра завершена\n")
+                f.write(f"Имя игрока: {self.player_name}\n")
+                f.write(f"Концовка: {ending}\n")
+                f.write(f"Финальный счет: {final_score}\n")
+                f.write(f"Параметры: Здоровье={self.health}, Карма={self.karma}, "
+                       f"Опыт={self.experience}, Удача={self.luck}\n")
+                f.write(f"Посещено сцен: {len(self.visited_scenes)}\n")
+                f.write("История выборов:\n")
+                
+                for i, choice in enumerate(self.choice_history, 1):
+                    f.write(f"  {i}. В сцене '{choice['scene']}' выбрано: {choice['choice']}\n")
+                
+                f.write("\n\n")
+            
+            print(f"\nРезультаты сохранены в файл '{filename}'")
+            
+        except Exception as e:
+            print(f"\nОшибка при сохранении результатов: {e}")
 
 def main():
     print("Добро пожаловать в игру!\n")
-
+    
     engine = GameEngine()
-    engine.player_name = input("Введите ваше имя: \n").strip() or "Игрок"
+    engine.player_name = input("Введите ваше имя: ").strip() or "Игрок"
 
-    print(f"\nДобро пожаловать, {engine.player_name}!\n")
+    print(f"\nДобро пожаловать, {engine.player_name}!")
     print("Ваше приключение начинается...\n")
 
-    while 1:
+    while True:
         scene = engine.get_current_scene()
+        if not scene:
+            print("Ошибка: сцена не найдена!")
+            break
+
+        print("\n")
         print(scene["text"])
+        print("\nТекущие параметры:")
         engine.display_status()
 
         if engine.is_ending():
             ending = engine.get_ending()
-            print(f"Вы достигли концовки: {ending} !\n")
+            print(f"\nВы достигли концовки: {ending} ")
+            final_score = engine.calculate_score()
+            print(f"Ваш итоговый счет: {final_score}")
+
+            print("\nСтатистика игры:")
+            print(f"Посещено сцен: {len(engine.visited_scenes)}")
+            print(f"Сделано выборов: {len(engine.choice_history)}")
+            print(f"Финальные параметры:")
+            print(f"  Здоровье: {engine.health}")
+            print(f"  Карма: {engine.karma}")
+            print(f"  Опыт: {engine.experience}")
+            print(f"  Удача: {engine.luck}")
+            
+            engine.save_results()
+            
+            print("\nВсе возможные концовки в игре:")
+            all_endings = engine.count_all_endings()
+            for ending_name, count in all_endings.items():
+                print(f"   {ending_name}: {count} способов достижения")
+            
+            print("\nСпасибо за игру!")
+            break
+        
+        print("\nВаши варианты:")
+        for i, choice in enumerate(scene["choices"], 1):
+            effects_text = ""
+            effects = choice.get("effects", {})
+            if effects:
+                effects_parts = []
+                for param, value in effects.items():
+                    if param == "health":
+                        param_name = "Здоровье"
+                    elif param == "karma":
+                        param_name = "Карма"
+                    elif param == "experience":
+                        param_name = "Опыт"
+                    elif param == "luck":
+                        param_name = "Удача"
+                    else:
+                        param_name = param
+                    
+                    if value > 0:
+                        effects_parts.append(f"+{value} {param_name}")
+                    elif value < 0:
+                        effects_parts.append(f"{value} {param_name}")
+                if effects_parts:
+                    effects_text = f" ({', '.join(effects_parts)})"
+            
+            print(f"{i}. {choice['text']}{effects_text}")
+
+        while True:
+            try:
+                choice = input("\nВаш выбор (введите номер): ").strip()
+                if not choice:
+                    print("Пожалуйста, сделайте выбор!")
+                    continue
+                    
+                choice_index = int(choice) - 1
+                
+                if not engine.make_choice(choice_index):
+                    print("Неверный выбор! Попробуйте снова.")
+                else:
+                    break
+                    
+            except ValueError:
+                print("Пожалуйста, введите число!")
+            except KeyboardInterrupt:
+                print("\n\nИгра прервана.")
+                return
 
 if __name__ == "__main__":
     main()
