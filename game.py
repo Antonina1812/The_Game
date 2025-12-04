@@ -1,17 +1,34 @@
-class GameEngine:
-    def __init__(self):
-        self.current_scene = "start"
-        self.visited_scenes = set()
-        self.choice_history = []
-        self.player_name = ""
-        self.health = 100
-        self.karma = 0
-        self.experience = 0
-        self.luck = 50
+"""
+Текстовая игра с нелинейным сюжетом.
+Игрок делает выборы, которые влияют на параметры персонажа и приводят к разным концовкам.
+Реализована как граф сценариев с алгоритмами поиска путей (BFS/DFS).
+"""
 
-        self.story = self.load_story()
+class GameEngine:
+    """Основной движок игры, управляющий сюжетом, состоянием игрока и переходами"""
+    
+    def __init__(self):
+        """Инициализация игры с начальными параметрами"""
+        self.current_scene = "start"  # Текущая сцена
+        self.visited_scenes = set()   # Посещенные сцены
+        self.choice_history = []      # История выборов игрока
+        self.player_name = ""         # Имя игрока
+        self.health = 100             # Здоровье (от 0 до 150)
+        self.karma = 0                # Карма (от -100 до 100)
+        self.experience = 0           # Опыт (от 0)
+        self.luck = 50                # Удача (от 0 до 100)
+        
+        self.story = self.load_story()  # Загрузка структуры сюжета
 
     def load_story(self):
+        """
+        Каждая сцена содержит:
+        - text: описание сцены
+        - choices: варианты выбора с эффектами
+        - is_ending: флаг концовки
+        - ending_name: название концовки (если is_ending=True)
+        """
+        # Базовые сцены
         story = {
             "start": {
                 "text": "Вы стоите на развилке трёх дорог в древнем лесу. Перед вами три пути:\n"
@@ -241,6 +258,7 @@ class GameEngine:
             }
         }
 
+        # Добавление финальных сцен
         story.update({
             "deep_forest": {
                 "text": "Вы заблудились в глубинах леса... Ваше приключение закончилось здесь.\n"
@@ -349,39 +367,59 @@ class GameEngine:
         return story
     
     def get_current_scene(self):
+        """
+        Получает текущую сцену из словаря сюжета
+        """
         return self.story.get(self.current_scene, None)
     
     def display_status(self):
+        """Выводит текущие параметры игрока"""
         print(f"Здоровье: {self.health}\nКарма: {self.karma}\nОпыт: {self.experience}\nУдача: {self.luck}")
 
     def is_ending(self):
+        """
+        Проверяет, является ли текущая сцена концовкой.
+        """
         scene = self.get_current_scene()
         return scene.get("is_ending", False) if scene else False
 
     def get_ending(self):
+        """
+        Получает название текущей концовки.
+        """
         scene = self.get_current_scene()
         if (scene and scene.get("is_ending", False)):
             return scene.get("ending_name", "Неизвестная концовка")
         return None
 
     def make_choice(self, choice_index):
+        """
+        Обрабатывает выбор игрока, обновляет состояние и переходит к следующей сцене.
+        """
         scene = self.get_current_scene()
         if ((not scene) or choice_index < 0 or choice_index >= len(scene["choices"])):
             return False
 
         choice = scene["choices"][choice_index]
+        # Сохраняем выбор в историю
         self.choice_history.append({
             "scene": self.current_scene,
             "choice": choice["text"],
             "next": choice["next"]
         })
 
+        # Применяем эффекты выбора
         self.apply_effects(choice.get("effects", {}))
+        # Отмечаем сцену как посещенную
         self.visited_scenes.add(self.current_scene)
+        # Переходим к следующей сцене
         self.current_scene = choice["next"]
         return True
 
     def apply_effects(self, effects):
+        """
+        Применяет эффекты выбора к параметрам игрока с ограничениями диапазонов.
+        """
         for param, val in effects.items():
             if param == "health":
                 self.health = max(0, min(150, self.health + val))
@@ -393,64 +431,89 @@ class GameEngine:
                 self.luck = max(0, min(100, self.luck + val))
 
     def calculate_score(self):
+        """
+        Вычисляет итоговый счет игрока на основе параметров и статистики.
+        """
         base_score = self.experience * 2 + self.health + self.karma + self.luck
+        # Бонусы за достижения
         if len(self.visited_scenes) >= 5:
-            base_score += 50
+            base_score += 50  # Бонус за исследование
         if self.health >= 100:
-            base_score += 30
+            base_score += 30  # Бонус за сохранение здоровья
         if self.karma >= 50:
-            base_score += 40
+            base_score += 40  # Бонус за хорошую карму
         return base_score
 
     def build_graph(self):
+        """
+        Строит граф переходов между сценами для алгоритмов поиска.
+        """
         graph = {}
         for scene_id, scene_data in self.story.items():
             choices = scene_data.get("choices", [])
             graph[scene_id] = [choice["next"] for choice in choices]
         return graph
 
-    def find_paths_to_ending(self, target_ending): #BFS
+    def find_paths_to_ending(self, target_ending):
+        """
+        Находит все возможные пути к указанной концовке с использованием BFS.
+        """
         graph = self.build_graph()
         paths = []
+        # Очередь для BFS: (текущий_путь, текущая_вершина)
         queue = [(["start"], "start")]
 
         while queue:
             path, current = queue.pop(0)
+            # Если достигли искомой концовки
             if (current in self.story and 
                 self.story[current].get("is_ending", False) and
                 self.story[current].get("ending_name") == target_ending):
                 paths.append(path + [current])
                 continue
 
+            # Добавляем соседей в очередь
             for neighbor in graph.get(current, []):
-                if neighbor not in path:
+                if neighbor not in path:  # Избегаем циклов
                     queue.append((path + [neighbor], neighbor))
         return paths
 
     def dfs(self, current, visited, endings_counter):
+        """
+        Рекурсивный DFS для подсчета всех возможных концовок.
+        """
         if current in visited:
             return
             
         visited.add(current)
 
+        # Если текущая сцена - концовка, увеличиваем счетчик
         if (current in self.story and 
             self.story[current].get("is_ending", False)):
             ending_name = self.story[current].get("ending_name", "Неизвестно")
             endings_counter[ending_name] = endings_counter.get(ending_name, 0) + 1
             return
         
+        # Рекурсивно обходим все варианты выбора
         scene = self.story.get(current, {})
         for choice in scene.get("choices", []):
             next_scene = choice["next"]
             if next_scene not in visited:
                 self.dfs(next_scene, visited.copy(), endings_counter)
     
-    def count_all_endings(self): #dfs
+    def count_all_endings(self):
+        """
+        Подсчитывает все возможные концовки в игре с помощью DFS
+        """
         endings_counter = {}
         self.dfs("start", set(), endings_counter)
         return endings_counter
     
     def save_results(self):
+        """
+        Сохраняет результаты игры в текстовый файл game_results.txt.
+        Записывает имя игрока, выборы, параметры и концовку.
+        """
         filename = "game_results.txt"
         ending = self.get_ending()
         final_score = self.calculate_score()
@@ -478,6 +541,9 @@ class GameEngine:
             print(f"\nОшибка при сохранении результатов: {e}")
 
 def main():
+    """
+    Основная функция игры. Управляет игровым циклом и взаимодействием с пользователем.
+    """
     print("Добро пожаловать в игру!\n")
     
     engine = GameEngine()
@@ -486,6 +552,7 @@ def main():
     print(f"\nДобро пожаловать, {engine.player_name}!")
     print("Ваше приключение начинается...\n")
 
+    # Основной игровой цикл
     while True:
         scene = engine.get_current_scene()
         if not scene:
@@ -497,12 +564,14 @@ def main():
         print("\nТекущие параметры:")
         engine.display_status()
 
+        # Проверка на достижение концовки
         if engine.is_ending():
             ending = engine.get_ending()
             print(f"\nВы достигли концовки: {ending} ")
             final_score = engine.calculate_score()
             print(f"Ваш итоговый счет: {final_score}")
 
+            # Вывод статистики
             print("\nСтатистика игры:")
             print(f"Посещено сцен: {len(engine.visited_scenes)}")
             print(f"Сделано выборов: {len(engine.choice_history)}")
@@ -512,8 +581,10 @@ def main():
             print(f"  Опыт: {engine.experience}")
             print(f"  Удача: {engine.luck}")
             
+            # Сохранение результатов
             engine.save_results()
             
+            # Показ всех возможных концовок
             print("\nВсе возможные концовки в игре:")
             all_endings = engine.count_all_endings()
             for ending_name, count in all_endings.items():
@@ -522,6 +593,7 @@ def main():
             print("\nСпасибо за игру!")
             break
         
+        # Отображение вариантов выбора
         print("\nВаши варианты:")
         for i, choice in enumerate(scene["choices"], 1):
             effects_text = ""
@@ -529,6 +601,7 @@ def main():
             if effects:
                 effects_parts = []
                 for param, value in effects.items():
+                    # Преобразование названий параметров на русский
                     if param == "health":
                         param_name = "Здоровье"
                     elif param == "karma":
@@ -540,6 +613,7 @@ def main():
                     else:
                         param_name = param
                     
+                    # Форматирование значений (+/-)
                     if value > 0:
                         effects_parts.append(f"+{value} {param_name}")
                     elif value < 0:
@@ -549,6 +623,7 @@ def main():
             
             print(f"{i}. {choice['text']}{effects_text}")
 
+        # Обработка ввода пользователя
         while True:
             try:
                 choice = input("\nВаш выбор (введите номер): ").strip()
